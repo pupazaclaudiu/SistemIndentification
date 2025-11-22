@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ro">
+  <head>
+    <meta charset="UTF-8">
+    <title>Analiză CSV</title>
+    <style>
+      table {
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      th, td {
+        border: 1px solid #ccc;
+        padding: 4px 8px;
+      }
+      th {
+        background: #eee;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Rezultatele analizei</h1>
+
+    <h2>Primele rânduri din fișier</h2>
+    {{ head|safe }}
+
+    <h2>Statistici descriptive</h2>
+    {{ desc|safe }}
+
+    <a href="{{ url_for('views.upload_csv') }}">Încarcă alt fișier</a>
+  </body>
+</html>
