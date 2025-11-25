@@ -1,44 +1,33 @@
 from flask import Blueprint,render_template,request, flash
-import pandas as pd
 views = Blueprint('views', __name__)
+
+METHODS=[
+    {"id":1,"name":"Semnale (procese) stochastice (aleatoare)","endpoint":"l1"},
+    {"id":2,"name":"Filtrarea numerică a datelor","endpoint":"l2"},
+    {"id":3,"name":"Identificarea sistemelor utilizând metode de regresie","endpoint":"l3"},
+    {"id":4,"name":"Identificarea sistemelor prin metoda deconvoluţiei","endpoint":"l4"},
+    {"id":5,"name":"CMMP offline","endpoint":"l5"},
+    {"id":6,"name":"Estimatori CMMP recursivi (on-line)","endpoint":"l6"},
+    {"id":7,"name":"Curve fitting ","endpoint":"l7"},
+    {"id":8,"name":"Neural Network","endpoint":"l8"}
+]
 
 @views.route('/')
 def home():
     return render_template('home.html')
 
 @views.route('/upload', methods=['GET', 'POST'])
-def upload_csv():
-    if request.method == 'POST':
-        # 1. luăm fișierul din formular
-        file = request.files.get('file')
+def upload():
+    return render_template(
+        'mainbase.html',
+        methods=METHODS,    # lista cu laboratoare
+        active_method=None  # niciun laborator selectat pe pagina principală
+    )
 
-        if not file:
-            flash("Nu ai selectat niciun fișier.",category="error")
-            return render_template("upload.html")
-
-        if file.filename == '':
-            flash("Numele fișierului este gol.",category="error")
-            return render_template("upload.html")
-
-        # 2. verificăm extensia (simplu)
-        if not file.filename.lower().endswith('.csv'):
-            flash("Te rog încarcă un fișier cu extensia .csv",category="error")
-            return render_template("upload.html")
-
-            # 3. citim CSV-ul direct din obiectul fișier
-        try:
-            df = pd.read_csv(file)  # file este un file-like object
-        except Exception as e:
-            flash(f"Eroare la citirea CSV-ului: {e}")
-            return render_template("upload.html")
-
-            # 4. aici faci ANALIZA ta pe ele ex:
-
-        head = df.head().to_html(classes="table table-striped", index=False)
-        desc = df.describe(include='all').to_html(classes="table table-bordered")
-
-            # poți trimite mai departe ce vrei în template
-        return render_template("analysis.html", head=head, desc=desc)
-
-     # dacă e GET, doar arătăm formularul
-    return render_template("upload.html")
+@views.route('/l1')
+def l1():
+    return render_template(
+        'l1.html',
+        methods=METHODS,
+        active_method=1,
+    )
