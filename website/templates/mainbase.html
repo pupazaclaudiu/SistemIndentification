@@ -15,7 +15,7 @@
         <div class="card-body">
           <h5 class="card-title mb-3">Laboratoare</h5>
 
-            <form method="POST" enctype="multipart/form-data">
+            <form method="POST" enctype="multipart/form-data" action="{{ url_for('views.upload') }}">
                     <!-- Dropdown laborator -->
                     <div class="form-group">
                       <label for="labSelect" class="small text-muted mb-1">
@@ -59,7 +59,7 @@
                     <!-- numele fișierului selectat (opțional, îl poți popula din backend) -->
                     <div id="current-file-name" class="small text-muted mb-3">
                       {% block current_file_name %}
-                      Niciun fișier selectat
+                        {{ current_file_name or 'Niciun fisier selectat' }}
                       {% endblock %}
                     </div>
 

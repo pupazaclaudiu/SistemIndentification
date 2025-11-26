@@ -1,5 +1,8 @@
 {% extends "mainbase.html" %}
-{% block title %}Semnale (procese) stochastice (aleatoare){% endblock %}
+
+{% block title %}
+  Semnale (procese) stochastice (aleatoare)
+{% endblock %}
 
 {# numele fișierului sub butonul „Selectează fișier .csv” #}
 {% block current_file_name %}
@@ -19,196 +22,175 @@
   </p>
 {% endblock %}
 
-{% block title_graphs %} Semnale stohastice {% endblock %}
+{# ATENȚIE: în mainbase.html block-ul se numește title_graf #}
+{% block title_graf %}
+  Semnale stochastice – L1
+{% endblock %}
 
-{# Grafice #}
-
+{# ================== GRAFICE ================== #}
 {% block graphs %}
-      <!-- Exemplu grafic 1 (placeholder) -->
-      <div class="card mb-3">
-        <div class="card-body">
-          <div
-            class="d-flex justify-content-between align-items-center mb-2"
-          >
-            <h6 class="mb-0">X în funcție de timp</h6>
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-secondary"
-            >
-              <i class="fa fa-expand"></i>
-            </button>
-          </div>
-          <div
-            id="chart-x"
-            class="bg-light border"
-            style="height: 220px;"
-          ></div>
-          <small class="text-muted d-block mt-2">
-            N = … · Δt = …
-          </small>
-        </div>
-      </div>
 
-      <!-- Exemplu grafic 2 (placeholder) -->
-      <div class="card mb-3">
-        <div class="card-body">
-          <div
-            class="d-flex justify-content-between align-items-center mb-2"
-          >
-            <h6 class="mb-0">Y în funcție de timp</h6>
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-secondary"
-            >
-              <i class="fa fa-expand"></i>
-            </button>
-          </div>
-          <div
-            id="chart-y"
-            class="bg-light border"
-            style="height: 220px;"
-          ></div>
-          <small class="text-muted d-block mt-2">
-            N = … · Δt = …
-          </small>
+  {% if plot_x_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="mb-0">X în funcție de timp</h6>
         </div>
+        <img src="{{ plot_x_url }}" alt="X(t)" class="img-fluid">
+        <small class="text-muted d-block mt-2">
+          N = {{ n_rows or '–' }}
+        </small>
       </div>
+    </div>
+  {% endif %}
 
-      <!-- Exemplu grafic 3 (placeholder) -->
-      <div class="card mb-3">
-        <div class="card-body">
-          <div
-            class="d-flex justify-content-between align-items-center mb-2"
-          >
-            <h6 class="mb-0">Autocorelație Rxx</h6>
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-secondary"
-            >
-              <i class="fa fa-expand"></i>
-            </button>
-          </div>
-          <div
-            id="chart-rxx"
-            class="bg-light border"
-            style="height: 180px;"
-          ></div>
-          <small class="text-muted d-block mt-2">Valori normalizate</small>
+  {% if plot_y_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="mb-0">Y în funcție de timp</h6>
         </div>
+        <img src="{{ plot_y_url }}" alt="Y(t)" class="img-fluid">
+        <small class="text-muted d-block mt-2">
+          N = {{ n_rows or '–' }}
+        </small>
       </div>
+    </div>
+  {% endif %}
 
-      <!-- Exemplu grafic 4 (placeholder) -->
-      <div class="card mb-3">
-        <div class="card-body">
-          <div
-            class="d-flex justify-content-between align-items-center mb-2"
-          >
-            <h6 class="mb-0">Intercorelație Rxy</h6>
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-secondary"
-            >
-              <i class="fa fa-expand"></i>
-            </button>
-          </div>
-          <div
-            id="chart-rxy"
-            class="bg-light border"
-            style="height: 180px;"
-          ></div>
-          <small class="text-muted d-block mt-2">Valori normalizate</small>
+  {% if plot_rxx_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="mb-0">Autocorelație Rxx</h6>
         </div>
+        <img src="{{ plot_rxx_url }}" alt="Rxx" class="img-fluid">
+        <small class="text-muted d-block mt-2">
+          Valori normalizate
+        </small>
       </div>
+    </div>
+  {% endif %}
+
+  {% if plot_rxy_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="mb-0">Intercorelație Rxy</h6>
+        </div>
+        <img src="{{ plot_rxy_url }}" alt="Rxy" class="img-fluid">
+        <small class="text-muted d-block mt-2">
+          Valori normalizate
+        </small>
+      </div>
+    </div>
+  {% endif %}
+
 {% endblock %}
 
-{%block statsX %}
-      <!-- STATISTICI X -->
-      <div class="card mb-3">
-        <div class="card-body">
-          <h6 class="card-title mb-3">Statistici X</h6>
+{# ================== STATISTICI X ================== #}
+{% block statsX %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <h6 class="card-title mb-3">Statistici X</h6>
 
-
-          <div class="mb-3">
-            <div class="small text-muted">M (media)</div>
-            <div id="stats-x-m" class="font-weight-bold">–</div>
-          </div>
-
-          <div class="mb-3">
-            <div class="small text-muted">V (varianță)</div>
-            <div id="stats-x-v" class="font-weight-bold">–</div>
-          </div>
-
-          <div>
-            <div class="small text-muted">σ (deviație standard)</div>
-            <div id="stats-x-sigma" class="font-weight-bold">–</div>
-          </div>
-
+      <div class="mb-3">
+        <div class="small text-muted">M (media)</div>
+        <div id="stats-x-m" class="font-weight-bold">
+          {{ "%.4f"|format(stats_x_m) if stats_x_m is not none else '–' }}
         </div>
       </div>
+
+      <div class="mb-3">
+        <div class="small text-muted">V (varianță)</div>
+        <div id="stats-x-v" class="font-weight-bold">
+          {{ "%.4f"|format(stats_x_v) if stats_x_v is not none else '–' }}
+        </div>
+      </div>
+
+      <div>
+        <div class="small text-muted">σ (deviație standard)</div>
+        <div id="stats-x-sigma" class="font-weight-bold">
+          {{ "%.4f"|format(stats_x_sigma) if stats_x_sigma is not none else '–' }}
+        </div>
+      </div>
+
+    </div>
+  </div>
 {% endblock %}
+
+{# ================== STATISTICI Y ================== #}
 {% block statsY %}
-      <!-- STATISTICI Y -->
-      <div class="card mb-3">
-        <div class="card-body">
-          <h6 class="card-title mb-3">Statistici Y</h6>
+  <div class="card mb-3">
+    <div class="card-body">
+      <h6 class="card-title mb-3">Statistici Y</h6>
 
-          {% block stats_y_values %}
-          <div class="mb-3">
-            <div class="small text-muted">M (media)</div>
-            <div id="stats-y-m" class="font-weight-bold">–</div>
-          </div>
-
-          <div class="mb-3">
-            <div class="small text-muted">V (varianță)</div>
-            <div id="stats-y-v" class="font-weight-bold">–</div>
-          </div>
-
-          <div>
-            <div class="small text-muted">σ (deviație standard)</div>
-            <div id="stats-y-sigma" class="font-weight-bold">–</div>
-          </div>
-          {% endblock %}
+      <div class="mb-3">
+        <div class="small text-muted">M (media)</div>
+        <div id="stats-y-m" class="font-weight-bold">
+          {{ "%.4f"|format(stats_y_m) if stats_y_m is not none else '–' }}
         </div>
       </div>
+
+      <div class="mb-3">
+        <div class="small text-muted">V (varianță)</div>
+        <div id="stats-y-v" class="font-weight-bold">
+          {{ "%.4f"|format(stats_y_v) if stats_y_v is not none else '–' }}
+        </div>
+      </div>
+
+      <div>
+        <div class="small text-muted">σ (deviație standard)</div>
+        <div id="stats-y-sigma" class="font-weight-bold">
+          {{ "%.4f"|format(stats_y_sigma) if stats_y_sigma is not none else '–' }}
+        </div>
+      </div>
+
+    </div>
+  </div>
 {% endblock %}
+
+{# ================== CORELAȚII ================== #}
 {% block stats1 %}
-<!-- CORELAȚII -->
-      <div class="card mb-3">
-        <div class="card-body">
-          <h6 class="card-title mb-2">Corelații</h6>
+  <div class="card mb-3">
+    <div class="card-body">
+      <h6 class="card-title mb-2">Corelații</h6>
 
-          {% block correlations_values %}
-          <p class="small mb-1">
-            Rxy(0) = <span id="corr-rxy0">–</span>
-          </p>
-          <p class="small mb-1">
-            max(Rxx) = <span id="corr-max-rxx">–</span>
-          </p>
-          <p class="small mb-0">
-            max(Ryy) = <span id="corr-max-ryy">–</span>
-          </p>
-          {% endblock %}
-        </div>
-      </div>
+      <p class="small mb-1">
+        Rxy(0) =
+        <span id="corr-rxy0">
+          {{ "%.4f"|format(corr_rxy0) if corr_rxy0 is not none else '–' }}
+        </span>
+      </p>
+      <p class="small mb-1">
+        max(Rxx) =
+        <span id="corr-max-rxx">
+          {{ "%.4f"|format(corr_max_rxx) if corr_max_rxx is not none else '–' }}
+        </span>
+      </p>
+      <p class="small mb-0">
+        max(Ryy) =
+        <span id="corr-max-ryy">
+          {{ "%.4f"|format(corr_max_ryy) if corr_max_ryy is not none else '–' }}
+        </span>
+      </p>
+    </div>
+  </div>
 {% endblock %}
+
+{# ================== FORMULE ================== #}
 {% block stats2 %}
- <!-- FORMULE -->
-      <div class="card">
-        <div class="card-body">
-          <h6 class="card-title mb-2">Formule</h6>
+  <div class="card">
+    <div class="card-body">
+      <h6 class="card-title mb-2">Formule</h6>
 
-          <div id="formulas-container">
-            {% block formulas_values %}
-            <p class="small mb-1">μ = (1/N) Σ xᵢ</p>
-            <p class="small mb-1">σ² = (1/N) Σ (xᵢ − μ)²</p>
-            <p class="small mb-0">
-              Rxx(k) = (1/N) Σ x(i) · x(i+k)
-            </p>
-            {% endblock %}
-          </div>
-        </div>
+      <div id="formulas-container">
+        <p class="small mb-1">μ = (1/N) Σ xᵢ</p>
+        <p class="small mb-1">σ² = (1/N) Σ (xᵢ − μ)²</p>
+        <p class="small mb-0">
+          Rxx(k) = (1/N) Σ x(i) · x(i+k)
+        </p>
       </div>
+    </div>
+  </div>
 {% endblock %}
-
-
-
