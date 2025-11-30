@@ -1,0 +1,199 @@
+{% extends "mainbase.html" %}
+
+{% block title %}
+  L6 – Estimatori CMMP recursivi (on-line)
+{% endblock %}
+
+{% block title_graf %}
+  L6 – CMMP recursiv (on-line)
+{% endblock %}
+
+{# numele fișierului sub butonul de încărcare .csv #}
+{% block current_file_name %}
+  {{ current_file_name or 'Niciun fișier selectat' }}
+{% endblock %}
+
+{# card „Fișier” din dreapta #}
+{% block file_info %}
+  <p class="small mb-1 text-muted">
+    Fișier: {{ current_file_name or '–' }}
+  </p>
+  <p class="small mb-1 text-muted">
+    Număr rânduri: {{ n_rows if n_rows is not none else '–' }}
+  </p>
+  <p class="small mb-0 text-muted">
+    Număr coloane: {{ n_cols if n_cols is not none else '–' }}
+  </p>
+{% endblock %}
+
+{# ===================== GRAFICE (mijloc) ===================== #}
+{% block graphs %}
+
+  {% if params_plot_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-2">Evoluția în timp a parametrilor estimați</h6>
+        <p class="small text-muted">
+          Parametrii estimați ai modelului ARX:
+          y(t) + a₁·y(t−1) + a₂·y(t−2) = b₁·u(t−1) + b₂·u(t−2) + e(t)
+        </p>
+        <img src="{{ params_plot_url }}" class="img-fluid"
+             alt="Evoluția parametrilor CMMP recursiv">
+      </div>
+    </div>
+  {% endif %}
+
+  {% if y_compare_plot_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-2">Comparație ieșire sistem vs. ieșire model identificat</h6>
+        <p class="small text-muted">
+          Comparație între ieșirea măsurată y(t) și ieșirea reconstruită
+          cu parametrii finali &nbsp; â₁, â₂, b̂₁, b̂₂.
+        </p>
+        <img src="{{ y_compare_plot_url }}" class="img-fluid"
+             alt="Comparație ieșire reală vs model">
+      </div>
+    </div>
+  {% endif %}
+
+  {% if not params_plot_url and not y_compare_plot_url %}
+    <div class="card">
+      <div class="card-body">
+        <p class="small text-muted mb-0">
+          Încarcă un fișier .csv și selectează <strong>L6</strong> în panoul din stânga,
+          apoi apasă <strong>Start analysis</strong> pentru a porni estimarea CMMP recursivă.
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+{% endblock %}
+
+{# ===================== DREAPTA – INFO / FORMULE ===================== #}
+
+{# Card: parametri estimați #}
+{% block statsX %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <h6 class="card-title mb-3">Parametrii CMMP recursiv (finali)</h6>
+
+      <p class="small mb-2">
+        Model ARX de ordin 2:
+      </p>
+
+      <p class="small mb-3 bg-light border rounded p-2">
+        y(t) + a₁·y(t−1) + a₂·y(t−2) =
+        b₁·u(t−1) + b₂·u(t−2) + e(t)
+      </p>
+
+      <div class="mb-2">
+        <div class="small text-muted">â₁</div>
+        <div class="font-weight-bold">
+          {% if a1 is not none %}
+            {{ "%.4f"|format(a1) }}
+          {% else %}–{% endif %}
+        </div>
+      </div>
+
+      <div class="mb-2">
+        <div class="small text-muted">â₂</div>
+        <div class="font-weight-bold">
+          {% if a2 is not none %}
+            {{ "%.4f"|format(a2) }}
+          {% else %}–{% endif %}
+        </div>
+      </div>
+
+      <div class="mb-2">
+        <div class="small text-muted">b̂₁</div>
+        <div class="font-weight-bold">
+          {% if b1 is not none %}
+            {{ "%.4f"|format(b1) }}
+          {% else %}–{% endif %}
+        </div>
+      </div>
+
+      <div>
+        <div class="small text-muted">b̂₂</div>
+        <div class="font-weight-bold">
+          {% if b2 is not none %}
+            {{ "%.4f"|format(b2) }}
+          {% else %}–{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{# nu folosim un al doilea card de statistici clasice #}
+{% block statsY %}{% endblock %}
+
+{# Card: parametri algoritmului recursiv #}
+{% block stats1 %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <h6 class="card-title mb-2">Parametri algoritmului recursiv</h6>
+
+      <div class="mb-2">
+        <div class="small text-muted">Număr eșantioane N</div>
+        <div class="font-weight-bold">
+          {{ N if N is not none else '–' }}
+        </div>
+      </div>
+
+      <div class="mb-2">
+        <div class="small text-muted">Factor de uitare λ</div>
+        <div class="font-weight-bold">
+          {{ "%.3f"|format(lambda_factor) if lambda_factor is not none else '–' }}
+        </div>
+      </div>
+
+      <div>
+        <div class="small text-muted mb-1">Dimensiunea vectorului de parametri θ</div>
+        <div class="font-weight-bold">4 (a₁, a₂, b₁, b₂)</div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{# Card: formule CMMP recursiv (pe scurt) #}
+{% block stats2 %}
+  <div class="card">
+    <div class="card-body">
+      <h6 class="card-title mb-2">Formule CMMP recursiv (RLS)</h6>
+
+      <p class="small mb-2">
+        Pentru vectorul parametrilor
+        θ(t) = [a₁(t), a₂(t), b₁(t), b₂(t)]ᵀ
+        și vectorul de regresori
+        s(t) = [−y(t−1), −y(t−2), u(t−1), u(t−2)]ᵀ:
+      </p>
+
+      <div class="bg-light border rounded p-2 mb-3">
+        <p class="small mb-1">
+          ε(t) = y(t) − sᵀ(t) · θ(t−1)
+        </p>
+        <p class="small mb-1">
+          K(t) = P(t−1) · s(t) /
+          [ λ + sᵀ(t) · P(t−1) · s(t) ]
+        </p>
+        <p class="small mb-1">
+          θ(t) = θ(t−1) + K(t) · ε(t)
+        </p>
+        <p class="small mb-0">
+          P(t) = ( I − K(t) · sᵀ(t) ) · P(t−1) / λ
+        </p>
+      </div>
+
+      <p class="small mb-1">
+        Inițializare tipică:
+      </p>
+      <ul class="small mb-0 pl-3">
+        <li>θ(0) = 0 (fără informații apriorice)</li>
+        <li>P(0) = α · I, α mare (ex. 10⁴)</li>
+        <li>λ ≈ 1 pentru sisteme invariabile în timp</li>
+      </ul>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,215 @@
+{% extends "mainbase.html" %}
+
+{% block title %}
+  L7 – Curve fitting polinomial (grade 1–6)
+{% endblock %}
+
+{% block title_graf %}
+  L7 – Aproximare prin curbe (curve fitting)
+{% endblock %}
+
+{# numele fișierului sub butonul de încărcare #}
+{% block current_file_name %}
+  {{ current_file_name or 'Niciun fișier selectat' }}
+{% endblock %}
+
+{# card „Fișier” din dreapta #}
+{% block file_info %}
+  <p class="small mb-1 text-muted">
+    Fișier: {{ current_file_name or '–' }}
+  </p>
+  <p class="small mb-1 text-muted">
+    Număr rânduri: {{ n_rows if n_rows is not none else '–' }}
+  </p>
+  <p class="small mb-0 text-muted">
+    Număr coloane: {{ n_cols if n_cols is not none else '–' }}
+  </p>
+{% endblock %}
+
+{# ===================== GRAFICE – mijloc ===================== #}
+{% block graphs %}
+
+  {% if fits_plot_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-2">Curbele polinomiale (gradele 1–6)</h6>
+        <p class="small text-muted">
+          Punctele reprezintă datele experimentale; liniile reprezintă fitările polinomiale.
+          Curba marcată în legendă ca „cel mai bun” corespunde modelului cu R² ajustat maxim.
+        </p>
+        <img src="{{ fits_plot_url }}" class="img-fluid" alt="Curve fitting grade 1–6">
+      </div>
+    </div>
+  {% endif %}
+
+  {% if rmse_plot_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-2">Eroarea RMSE în funcție de grad</h6>
+        <p class="small text-muted">
+          RMSE (root mean squared error) – valoare mai mică înseamnă potrivire mai bună.
+        </p>
+        <img src="{{ rmse_plot_url }}" class="img-fluid" alt="RMSE vs grad">
+      </div>
+    </div>
+  {% endif %}
+
+  {% if not fits_plot_url and not rmse_plot_url %}
+    <div class="card">
+      <div class="card-body">
+        <p class="small text-muted mb-0">
+          Încarcă un fișier .csv, selectează metoda <strong>L7 – Curve fitting</strong> și apasă
+          <strong>Start analysis</strong> pentru a vedea curbele de grad 1…6.
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+{% endblock %}
+
+{# ===================== DREAPTA – cea mai bună fitare ===================== #}
+{% block statsX %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <h6 class="card-title mb-3">Cel mai bun model polinomial</h6>
+
+      {% if best_model %}
+        <p class="small mb-2">
+          Criteriu de selecție: <strong>R² ajustat maxim</strong>
+          (la egalitate se preferă gradul mai mic).
+        </p>
+
+        <p class="small mb-1">
+          Grad polinom: <strong>{{ best_model.degree }}</strong>
+        </p>
+
+        <p class="small mb-2">
+          Formula aproximativă:
+        </p>
+        <p class="small mb-3 bg-light border rounded p-2">
+          {{ best_model.formula }}
+        </p>
+
+        <p class="small mb-1">
+          SSE (sum of squared errors):
+          <strong>{{ "%.4g"|format(best_model.SSE) }}</strong>
+        </p>
+        <p class="small mb-1">
+          R²:
+          <strong>
+            {% if best_model.R2 is not none %}
+              {{ "%.4f"|format(best_model.R2) }}
+            {% else %}–{% endif %}
+          </strong>
+        </p>
+        <p class="small mb-1">
+          R² ajustat:
+          <strong>
+            {% if best_model.adj_R2 is not none %}
+              {{ "%.4f"|format(best_model.adj_R2) }}
+            {% else %}–{% endif %}
+          </strong>
+        </p>
+        <p class="small mb-0">
+          RMSE:
+          <strong>
+            {% if best_model.RMSE is not none %}
+              {{ "%.4g"|format(best_model.RMSE) }}
+            {% else %}–{% endif %}
+          </strong>
+        </p>
+      {% else %}
+        <p class="small text-muted mb-0">
+          Niciun model nu a putut fi calculat (verifică fișierul sau numărul de puncte).
+        </p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+
+{# ===================== DREAPTA – tabel cu toate gradele ===================== #}
+{% block statsY %}
+  {% if models %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="card-title mb-2">Compararea fitărilor (grade 1–6)</h6>
+
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered mb-0">
+            <thead class="thead-light">
+              <tr class="small">
+                <th>Grad</th>
+                <th>SSE</th>
+                <th>R²</th>
+                <th>R² ajustat</th>
+                <th>RMSE</th>
+              </tr>
+            </thead>
+            <tbody class="small">
+              {% for m in models %}
+                <tr {% if best_model and m.degree == best_model.degree %}class="table-success"{% endif %}>
+                  <td>{{ m.degree }}</td>
+                  <td>{{ "%.4g"|format(m.SSE) }}</td>
+                  <td>
+                    {% if m.R2 is not none %}
+                      {{ "%.4f"|format(m.R2) }}
+                    {% else %}–{% endif %}
+                  </td>
+                  <td>
+                    {% if m.adj_R2 is not none %}
+                      {{ "%.4f"|format(m.adj_R2) }}
+                    {% else %}–{% endif %}
+                  </td>
+                  <td>
+                    {% if m.RMSE is not none %}
+                      {{ "%.4g"|format(m.RMSE) }}
+                    {% else %}–{% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}
+
+{# ===================== DREAPTA – explicații formule (SSE, R², etc.) ===================== #}
+{% block stats1 %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <h6 class="card-title mb-2">Indicatori de calitate ai fitării</h6>
+
+      <p class="small mb-1"><strong>SSE</strong> – suma pătratelor reziduurilor (erorilor).
+        Valoare mai mică &rarr; potrivire mai bună.</p>
+      <p class="small mb-1"><strong>R²</strong> – coeficientul de determinare.
+        Aproape de 1 &rarr; modelul explică bine variația datelor.</p>
+      <p class="small mb-1"><strong>R² ajustat</strong> – R² corectat cu gradele de libertate;
+        este indicatorul recomandat când compari modele cu grade diferite.</p>
+      <p class="small mb-0"><strong>RMSE</strong> – eroarea medie pătratică rădăcină;
+        aproximativ „eroarea tipică” pe punct. Mai mic &rarr; fit mai bun.</p>
+    </div>
+  </div>
+{% endblock %}
+
+{% block stats2 %}
+  <div class="card">
+    <div class="card-body">
+      <h6 class="card-title mb-2">Model polinomial de grad n</h6>
+      <p class="small mb-2">
+        Se caută un polinom de forma:
+      </p>
+      <p class="small mb-2 bg-light border rounded p-2">
+        y ≈ a₀ + a₁·x + a₂·x² + … + aₙ·xⁿ
+      </p>
+      <p class="small mb-0">
+        Coeficienții a<sub>i</sub> se determină prin metoda celor mai mici pătrate,
+        minimizând SSE = Σ (y<sub>i</sub> − ŷ<sub>i</sub>)². Pentru fiecare grad 1…6
+        se calculează indicatorii de mai sus, iar modelul cu cel mai mare R² ajustat
+        este considerat „cel mai bun” pentru domeniul de date ales.
+      </p>
+    </div>
+  </div>
+{% endblock %}

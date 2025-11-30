@@ -1,0 +1,222 @@
+{% extends "mainbase.html" %}
+
+{% block title %}
+  L8 – Identificarea unui sistem cu rețea neuronală
+{% endblock %}
+
+{% block title_graf %}
+  L8 – Rețea neuronală feed-forward (model de sistem)
+{% endblock %}
+
+{# numele fișierului sub butonul de încărcare .csv #}
+{% block current_file_name %}
+  {{ current_file_name or 'Niciun fișier selectat' }}
+{% endblock %}
+
+{# card „Fișier” din dreapta #}
+{% block file_info %}
+  <p class="small mb-1 text-muted">
+    Fișier: {{ current_file_name or '–' }}
+  </p>
+  <p class="small mb-1 text-muted">
+    Număr rânduri: {{ n_rows if n_rows is not none else '–' }}
+  </p>
+  <p class="small mb-0 text-muted">
+    Număr coloane: {{ n_cols if n_cols is not none else '–' }}
+  </p>
+{% endblock %}
+
+{# ===================== GRAFICE – mijloc ===================== #}
+{% block graphs %}
+
+  {% if y_compare_plot_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-2">Ieșire sistem vs. ieșire rețea neuronală</h6>
+        <p class="small text-muted">
+          Rețeaua neuronală este antrenată să reproducă ieșirea sistemului
+          pe baza vectorului de intrare [u(n), u(n−1), u(n−2)].
+        </p>
+        <img src="{{ y_compare_plot_url }}" class="img-fluid" alt="y vs y_hat">
+      </div>
+    </div>
+  {% endif %}
+
+  {% if error_plot_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-2">Eroarea de modelare e[n]</h6>
+        <p class="small text-muted">
+          e[n] = y[n] − ŷ[n]. Valori mici → rețeaua modelează bine sistemul.
+        </p>
+        <img src="{{ error_plot_url }}" class="img-fluid" alt="eroare e[n]">
+      </div>
+    </div>
+  {% endif %}
+
+  {% if loss_plot_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-2">Evoluția funcției de cost (loss)</h6>
+        <p class="small text-muted">
+          Graficul arată cum scade funcția de cost în timpul epocilor de antrenare.
+        </p>
+        <img src="{{ loss_plot_url }}" class="img-fluid" alt="loss curve">
+      </div>
+    </div>
+  {% endif %}
+
+  {% if not y_compare_plot_url and not error_plot_url and not loss_plot_url %}
+    <div class="card">
+      <div class="card-body">
+        <p class="small text-muted mb-0">
+          Încarcă un fișier .csv cu două coloane (u[n], y[n]),
+          selectează <strong>L8 – Neural Network</strong> și apasă
+          <strong>Start analysis</strong> pentru a antrena rețeaua.
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+{% endblock %}
+
+{# ===================== CARD 1: Performanța rețelei ===================== #}
+{% block statsX %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <h6 class="card-title mb-3">Performanța rețelei neuronale</h6>
+
+      <div class="mb-2">
+        <div class="small text-muted">Număr eșantioane N</div>
+        <div class="font-weight-bold">
+          {{ N if N is not none else '–' }}
+        </div>
+      </div>
+
+      <div class="mb-2">
+        <div class="small text-muted">MSE (mean squared error)</div>
+        <div class="font-weight-bold">
+          {% if mse is not none %}
+            {{ "%.5g"|format(mse) }}
+          {% else %}–{% endif %}
+        </div>
+      </div>
+
+      <div class="mb-2">
+        <div class="small text-muted">RMSE</div>
+        <div class="font-weight-bold">
+          {% if rmse is not none %}
+            {{ "%.5g"|format(rmse) }}
+          {% else %}–{% endif %}
+        </div>
+      </div>
+
+      <div>
+        <div class="small text-muted">R² (coeficient de determinare)</div>
+        <div class="font-weight-bold">
+          {% if r2 is not none %}
+            {{ "%.4f"|format(r2) }}
+          {% else %}–{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{# ===================== CARD 2: Arhitectura rețelei ===================== #}
+{% block statsY %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <h6 class="card-title mb-3">Arhitectura rețelei</h6>
+
+      <p class="small mb-2">
+        Rețea feed-forward cu o singură strat ascuns:
+      </p>
+
+      <ul class="small mb-2">
+        <li>Intrare: 3 neuroni (u(n), u(n−1), u(n−2))</li>
+        <li>Strat ascuns: {{ hidden_neurons }} neuroni, activare
+            <strong>{{ activation_name }}</strong></li>
+        <li>Strat de ieșire: 1 neuron, activare liniară</li>
+      </ul>
+
+      <p class="small mb-1">
+        Număr epoci de antrenare efective:
+        <span class="font-weight-bold">
+          {% if max_epochs is not none %}
+            {{ max_epochs }}
+          {% else %}–{% endif %}
+        </span>
+      </p>
+
+      <p class="small mb-0 text-muted">
+        Implementare echivalentă cu un MLP (multilayer perceptron) regresor.
+      </p>
+    </div>
+  </div>
+{% endblock %}
+
+{# ===================== CARD 3: Formule rețea NN ===================== #}
+{% block stats1 %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <h6 class="card-title mb-2">Modelul matematic al rețelei</h6>
+
+      <p class="small mb-2">
+        Vectorul de intrare la momentul n:
+      </p>
+      <p class="small mb-2 bg-light border rounded p-2">
+        x(n) = [ u(n), u(n−1), u(n−2) ]ᵀ
+      </p>
+
+      <p class="small mb-2">
+        Stratul ascuns calculează:
+      </p>
+      <p class="small mb-2 bg-light border rounded p-2">
+        h = ϕ(W₁ · x + b₁)
+      </p>
+
+      <p class="small mb-2">
+        Stratul de ieșire produce predicția:
+      </p>
+      <p class="small mb-2 bg-light border rounded p-2">
+        ŷ(n) = W₂ · h + b₂
+      </p>
+
+      <p class="small mb-0">
+        unde ϕ este funcția de activare neliniară (de tip
+        <em>tanh</em>), W₁, W₂ sunt matricile de ponderi iar b₁, b₂
+        vectorii de bias.
+      </p>
+    </div>
+  </div>
+{% endblock %}
+
+{# ===================== CARD 4: Antrenarea (backprop + gradient desc.) ===================== #}
+{% block stats2 %}
+  <div class="card">
+    <div class="card-body">
+      <h6 class="card-title mb-2">Antrenarea rețelei (CMMP neliniar)</h6>
+
+      <p class="small mb-2">
+        Rețeaua este antrenată prin minimizarea funcției de cost
+        (de tip MSE) pe setul de date:
+      </p>
+
+      <p class="small mb-2 bg-light border rounded p-2">
+        J = (1/N) · Σ ( y(n) − ŷ(n) )²
+      </p>
+
+      <p class="small mb-2">
+        Ponderile se actualizează iterativ prin algoritmul
+        <em>backpropagation</em> cu gradient descendent (solver „adam”).
+      </p>
+
+      <p class="small mb-0">
+        După antrenare, rețeaua poate fi folosită ca model al sistemului:
+        pentru orice secvență nouă u[n], se formează vectorul x(n) și
+        se calculează ŷ(n) ≈ răspunsul sistemului.
+      </p>
+    </div>
+  </div>
+{% endblock %}
