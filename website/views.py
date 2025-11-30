@@ -442,5 +442,370 @@ def l2():
         plot_fft5_url=plot_fft5_url,
         plot_fft6_url=plot_fft6_url,
     )
+@views.route('/l3')
+def l3():
+    current_file_name = None
+    n_rows = None
+    n_cols = None
+
+    a = b = None
+    reg_plot_url = None
+
+    filename = request.args.get('filename')
+
+    u = y = None
+
+    if filename:
+        current_file_name = filename
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+
+        # citim CSV cu auto-detect pentru , / ;
+        df = pd.read_csv(filepath, sep=None, engine="python")
+        n_rows, n_cols = df.shape
+
+        if n_cols >= 2:
+            u = df.iloc[:, 0].to_numpy(dtype=float)
+            y = df.iloc[:, 1].to_numpy(dtype=float)
+        else:
+            flash('Fișierul trebuie să conțină cel puțin o coloană.', 'error')
+    if u is not None and y is not None:
+        N = len(u)
+
+        # sume ca în laborator
+        sy = y.sum()
+        su = u.sum()
+        suy = (u * y).sum()
+        su2 = (u ** 2).sum()
+
+        # coeficienții regresiei ŷ = a + b u
+        den_a = su * su - su2 * N
+        den_b = su2 * N - su * su
+
+        if den_a == 0 or den_b == 0:
+            flash('Datele nu permit determinarea unei regresii liniare (denominator zero).', 'error')
+        else:
+            a = (su * suy - su2 * sy) / den_a
+            b = (suy * N - su * sy) / den_b
+
+            y_hat = a + b * u
+
+            # grafic: puncte + dreaptă de regresie
+            plots_dir = os.path.join(current_app.static_folder, 'plots/l3')
+            os.makedirs(plots_dir, exist_ok=True)
+
+            plt.figure()
+            plt.scatter(u, y, label='Date măsurate')
+            plt.plot(u, y_hat, 'r-', label='Regresie ŷ = a + b·u')
+            plt.xlabel('u')
+            plt.ylabel('y')
+            plt.title('Câmp de corelație și dreapta de regresie')
+            plt.grid(True)
+            plt.legend()
+            reg_path = os.path.join(plots_dir, 'l3_regression.png')
+            plt.savefig(reg_path, bbox_inches='tight')
+            plt.close()
+
+            reg_plot_url = url_for('static', filename='plots/l3/l3_regression.png')
+
+    return render_template(
+        'l3.html',
+        methods=METHODS,
+        active_method=3,
+
+        current_file_name=current_file_name,
+        n_rows=n_rows,
+        n_cols=n_cols,
+
+        a=a,
+        b=b,
+
+        reg_plot_url=reg_plot_url,
+    )
+@views.route('/l4')
+def l4():
+    current_file_name = None
+    n_rows = None
+    n_cols = None
+
+    N = None         # număr de eșantioane
+    nh = None        # lungimea funcției pondere estimate
+
+    ru = None        # autocorelație u
+    ruy = None       # intercorelație u-y
+    h = None         # funcția pondere
+
+    # URL-uri pentru grafice
+    plot_u_y_url = None
+    plot_ru_url = None
+    plot_ruy_url = None
+    plot_h_url = None
+
+    filename = request.args.get('filename')
+
+    if filename:
+        current_file_name = filename
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+
+        # citim CSV cu autodetect pentru separator (',' sau ';')
+        df = pd.read_csv(filepath, sep=None, engine="python")
+        n_rows, n_cols = df.shape
+
+        if n_cols < 2:
+            flash('Pentru L4 fișierul trebuie să aibă cel puțin 2 coloane: u[n] și y[n].', 'error')
+        else:
+            # u = prima coloană, y = a doua coloană
+            u = df.iloc[:, 0].to_numpy(dtype=float)
+            y = df.iloc[:, 1].to_numpy(dtype=float)
+
+            N = len(u)
+            # număr de coeficienți de h – poți ajusta după laborator
+            nh = min(20, N // 4) if N is not None else 20
+            if nh < 3:
+                nh = 3
+
+            # ================================
+            # 1) Autocorelație Ru(k) și intercorelație Ruy(k)
+            # ================================
+            ru = np.zeros(nh)
+            ruy = np.zeros(nh)
+
+            for k in range(nh):
+                # i = 0..N-k-1 (similar cu codul din MATLAB din laborator)
+                ru[k] = np.sum(u[0:N - k] * u[k:N]) / N
+                ruy[k] = np.sum(u[0:N - k] * y[k:N]) / N
+
+            # ================================
+            # 2) Construirea matricii Φ_u și a vectorului Φ_uy
+            #    Φ_u ~ Toeplitz(ru), Φ_uy = [R_uy(0) ... R_uy((nh-1)Δ)]^T
+            # ================================
+            fiuy = ruy.copy()  # vector 1D de lungime nh
+
+            fiu = np.zeros((nh, nh))
+            for i in range(nh):
+                for j in range(i, nh):
+                    fiu[i, j] = ru[j - i]
+                    fiu[j, i] = fiu[i, j]  # simetrizare
+
+            # ================================
+            # 3) Rezolvarea ecuației Wiener–Hopf: Φ_u · h = Φ_uy
+            # ================================
+            try:
+                h = np.linalg.solve(fiu, fiuy)
+            except np.linalg.LinAlgError:
+                flash('Matricea de autocorelație este singulară – nu se poate calcula h(k).', 'error')
+                h = None
+
+            # ================================
+            # 4) Generare grafice
+            # ================================
+            plots_dir = os.path.join(current_app.static_folder, 'plots/l4')
+            os.makedirs(plots_dir, exist_ok=True)
+
+            n_vec = np.arange(N)
+            k_vec = np.arange(nh)
+
+            # u[n] și y[n]
+            plt.figure()
+            plt.plot(n_vec, u, label='u[n] (intrare)')
+            plt.plot(n_vec, y, label='y[n] (ieșire)', linestyle='--')
+            plt.xlabel('n')
+            plt.ylabel('amplitudine')
+            plt.title('Semnalele de intrare și ieșire')
+            plt.grid(True)
+            plt.legend()
+            uy_path = os.path.join(plots_dir, 'l4_u_y.png')
+            plt.savefig(uy_path, bbox_inches='tight')
+            plt.close()
+
+            # Ru(k)
+            plt.figure()
+            plt.stem(k_vec, ru)
+            plt.xlabel('k')
+            plt.ylabel('Ru(k)')
+            plt.title('Autocorelația intrării Ru(k)')
+            plt.grid(True)
+            ru_path = os.path.join(plots_dir, 'l4_ru.png')
+            plt.savefig(ru_path, bbox_inches='tight')
+            plt.close()
+
+            # Ruy(k)
+            plt.figure()
+            plt.stem(k_vec, ruy)
+            plt.xlabel('k')
+            plt.ylabel('Ruy(k)')
+            plt.title('Intercorelația intrare-ieșire Ruy(k)')
+            plt.grid(True)
+            ruy_path = os.path.join(plots_dir, 'l4_ruy.png')
+            plt.savefig(ruy_path, bbox_inches='tight')
+            plt.close()
+
+            # h(k) – funcția pondere estimată
+            if h is not None:
+                plt.figure()
+                plt.stem(k_vec, h)
+                plt.xlabel('k')
+                plt.ylabel('h(k)')
+                plt.title('Funcția pondere estimată h(k)')
+                plt.grid(True)
+                h_path = os.path.join(plots_dir, 'l4_h.png')
+                plt.savefig(h_path, bbox_inches='tight')
+                plt.close()
+
+                plot_h_url = url_for('static', filename='plots/l4/l4_h.png')
+
+            # URL-uri pentru template
+            plot_u_y_url = url_for('static', filename='plots/l4/l4_u_y.png')
+            plot_ru_url = url_for('static', filename='plots/l4/l4_ru.png')
+            plot_ruy_url = url_for('static', filename='plots/l4/l4_ruy.png')
+
+    return render_template(
+        'l4.html',
+        methods=METHODS,
+        active_method=4,
+
+        current_file_name=current_file_name,
+        n_rows=n_rows,
+        n_cols=n_cols,
+
+        N=N,
+        nh=nh,
+
+        plot_u_y_url=plot_u_y_url,
+        plot_ru_url=plot_ru_url,
+        plot_ruy_url=plot_ruy_url,
+        plot_h_url=plot_h_url,
+    )
+@views.route('/l5')
+def l5():
+    current_file_name = None
+    n_rows = None
+    n_cols = None
+
+    # ordinele modelului ARX (poți să le schimbi dacă vrei)
+    na = 2   # număr coeficienți pe y (autoregresivi)
+    nb = 2   # număr coeficienți pe u (intrare)
+
+    a_params = None  # [a1, a2, ...]
+    b_params = None  # [b1, b2, ...]
+    N_eff = None     # număr de eșantioane folosite în regresie
+
+    plot_u_url = None
+    plot_y_hat_url = None
+
+    filename = request.args.get('filename')
+
+    u = y = None
+
+    if filename:
+        current_file_name = filename
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+
+        # citim CSV cu auto-detect pentru , / ;
+        df = pd.read_csv(filepath, sep=None, engine="python")
+        n_rows, n_cols = df.shape
+
+        if n_cols >= 2:
+            u = df.iloc[:, 0].to_numpy(dtype=float)
+            y = df.iloc[:, 1].to_numpy(dtype=float)
+        else:
+            flash('Pentru L5 fișierul trebuie să aibă cel puțin 2 coloane: u[n] și y[n].', 'error')
+
+    # dacă avem date valide, facem CMMP offline
+    if u is not None and y is not None:
+        N = len(u)
+        d = max(na, nb)   # întârzierea maximă
+        if N <= d:
+            flash('Seria de date este prea scurtă pentru ordinele alese na, nb.', 'error')
+        else:
+            N_eff = N - d
+
+            # Construim matricea Φ și vectorul Ycmmp
+            # model: y[k] ≈ -a1 y[k-1] - ... - ana y[k-na] + b1 u[k-1] + ... + bnb u[k-nb]
+            Phi = np.zeros((N_eff, na + nb))
+            Ycmmp = np.zeros(N_eff)
+
+            row = 0
+            for k in range(d, N):
+                # termeni pe y (autoregresivi, cu semn minus)
+                for i in range(na):
+                    Phi[row, i] = -y[k - 1 - i]
+
+                # termeni pe u (intrare)
+                for j in range(nb):
+                    Phi[row, na + j] = u[k - 1 - j]
+
+                Ycmmp[row] = y[k]
+                row += 1
+
+            # θ = (ΦᵀΦ)^(-1) Φᵀ Y  (CMMP offline)
+            try:
+                theta = np.linalg.inv(Phi.T @ Phi) @ (Phi.T @ Ycmmp)
+            except np.linalg.LinAlgError:
+                # fallback – soluție LS robustă
+                theta, *_ = np.linalg.lstsq(Phi, Ycmmp, rcond=None)
+
+            a_params = theta[:na]
+            b_params = theta[na:]
+
+            # ieșire estimată
+            y_hat = Phi @ theta
+
+            # axă pentru plot (doar eșantioanele unde avem estimare)
+            n_vec = np.arange(d, N)
+
+            plots_dir = os.path.join(current_app.static_folder, 'plots/l5')
+            os.makedirs(plots_dir, exist_ok=True)
+
+            # 1) u[n]
+            plt.figure()
+            plt.plot(np.arange(N), u, label='u[n]')
+            plt.xlabel('n')
+            plt.ylabel('u[n]')
+            plt.title('Semnal de intrare u[n]')
+            plt.grid(True)
+            plt.legend()
+            u_path = os.path.join(plots_dir, 'l5_u.png')
+            plt.savefig(u_path, bbox_inches='tight')
+            plt.close()
+
+            # 2) y[n] vs ŷ[n]
+            plt.figure()
+            plt.plot(np.arange(N), y, label='y[n] măsurat')
+            plt.plot(n_vec, y_hat, 'r--', label='ŷ[n] model ARX', linewidth=1.0)
+            plt.xlabel('n')
+            plt.ylabel('amplitudine')
+            plt.title('Ieșire măsurată vs ieșire estimată (CMMP offline)')
+            plt.grid(True)
+            plt.legend()
+            yhat_path = os.path.join(plots_dir, 'l5_y_yhat.png')
+            plt.savefig(yhat_path, bbox_inches='tight')
+            plt.close()
+
+            # URL-uri pentru template
+            plot_u_url = url_for('static', filename='plots/l5/l5_u.png')
+            plot_y_hat_url = url_for('static', filename='plots/l5/l5_y_yhat.png')
+
+    return render_template(
+        'l5.html',
+        methods=METHODS,
+        active_method=5,
+
+        current_file_name=current_file_name,
+        n_rows=n_rows,
+        n_cols=n_cols,
+
+        na=na,
+        nb=nb,
+        N_eff=N_eff,
+
+        a_params=a_params,
+        b_params=b_params,
+
+        plot_u_url=plot_u_url,
+        plot_y_hat_url=plot_y_hat_url,
+    )
+
+
+
 
 

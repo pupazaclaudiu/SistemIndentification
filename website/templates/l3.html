@@ -1,0 +1,148 @@
+{% extends "mainbase.html" %}
+
+{% block title %}
+  L3 – Identificarea sistemelor utilizând metode de regresie
+{% endblock %}
+
+{% block title_graf %}
+  L3 – Regresie liniară (ŷ = a + b·u)
+{% endblock %}
+
+{# numele fișierului sub butonul de încărcare #}
+{% block current_file_name %}
+  {{ current_file_name or 'Niciun fișier selectat' }}
+{% endblock %}
+
+{# card „Fișier” din dreapta #}
+{% block file_info %}
+  <p class="small mb-1 text-muted">
+    Fișier: {{ current_file_name or '–' }}
+  </p>
+  <p class="small mb-1 text-muted">
+    Număr rânduri: {{ n_rows if n_rows is not none else '–' }}
+  </p>
+  <p class="small mb-0 text-muted">
+    Număr coloane: {{ n_cols if n_cols is not none else '–' }}
+  </p>
+{% endblock %}
+
+{# ===================== GRAFIC (mijloc) ===================== #}
+{% block graphs %}
+  {% if reg_plot_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-2">Câmp de corelație și dreapta de regresie</h6>
+        <img src="{{ reg_plot_url }}" class="img-fluid" alt="Regresie liniară">
+      </div>
+    </div>
+  {% else %}
+    <div class="card">
+      <div class="card-body">
+        <p class="small text-muted mb-0">
+          Încarcă un fișier și selectează L3 din panoul din stânga pentru a vedea regresia liniară.
+        </p>
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}
+
+{# ===================== PARAMETRI REGRESIE (dreapta) ===================== #}
+{% block statsX %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <h6 class="card-title mb-3">Parametrii regresiei liniare</h6>
+
+      <p class="small mb-2">
+        Model de regresie de ordinul I:
+      </p>
+      <p class="small mb-3 bg-light border rounded p-2">
+        ŷ = a + b · u
+      </p>
+
+      <div class="mb-2">
+        <div class="small text-muted">a (intercept)</div>
+        <div class="font-weight-bold">
+          {% if a is not none %}
+            {{ "%.4f"|format(a) }}
+          {% else %}
+            –
+          {% endif %}
+        </div>
+      </div>
+
+      <div>
+        <div class="small text-muted">b (pantă)</div>
+        <div class="font-weight-bold">
+          {% if b is not none %}
+            {{ "%.4f"|format(b) }}
+          {% else %}
+            –
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{# nu avem Statistici Y aici #}
+{% block statsY %}{% endblock %}
+
+{# ===================== FORMULE – sumatori și ecuații normale ===================== #}
+{% block stats1 %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <h6 class="card-title mb-2">Sumatori pentru regresie</h6>
+
+      <p class="small mb-2">
+        Pentru N perechi (u<sub>i</sub>, y<sub>i</sub>), definim:
+      </p>
+
+      <div class="bg-light border rounded p-2">
+        <p class="small mb-1">S<sub>u</sub> = &sum; u<sub>i</sub></p>
+        <p class="small mb-1">S<sub>y</sub> = &sum; y<sub>i</sub></p>
+        <p class="small mb-1">S<sub>uy</sub> = &sum; u<sub>i</sub> · y<sub>i</sub></p>
+        <p class="small mb-0">S<sub>u²</sub> = &sum; u<sub>i</sub><sup>2</sup></p>
+      </div>
+
+      <p class="small mt-3 mb-2">
+        Ecuațiile normale ale regresiei liniare:
+      </p>
+
+      <div class="bg-light border rounded p-2">
+        <p class="small mb-1">
+          a · N + b · S<sub>u</sub> = S<sub>y</sub>
+        </p>
+        <p class="small mb-0">
+          a · S<sub>u</sub> + b · S<sub>u²</sub> = S<sub>uy</sub>
+        </p>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block stats2 %}
+  <div class="card">
+    <div class="card-body">
+      <h6 class="card-title mb-2">Formulele explicite pentru a și b</h6>
+
+      <p class="small mb-2">
+        Din sistemul de ecuații normale rezultă:
+      </p>
+
+      <div class="bg-light border rounded p-2">
+        <p class="small mb-2">
+          a =
+          (S<sub>u</sub> · S<sub>uy</sub> − S<sub>u²</sub> · S<sub>y</sub>)
+          /
+          (S<sub>u</sub><sup>2</sup> − N · S<sub>u²</sub>)
+        </p>
+        <p class="small mb-0">
+          b =
+          (S<sub>uy</sub> · N − S<sub>u</sub> · S<sub>y</sub>)
+          /
+          (S<sub>u²</sub> · N − S<sub>u</sub><sup>2</sup>)
+        </p>
+      </div>
+    </div>
+  </div>
+{% endblock %}

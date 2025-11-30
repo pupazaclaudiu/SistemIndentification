@@ -1,0 +1,204 @@
+{% extends "mainbase.html" %}
+
+{% block title %}
+  L4 – Identificarea sistemelor prin metoda deconvoluţiei
+{% endblock %}
+
+{% block title_graf %}
+  L4 – Metoda deconvoluţiei (funcția pondere h(k))
+{% endblock %}
+
+{# numele fișierului sub butonul de încărcare .csv #}
+{% block current_file_name %}
+  {{ current_file_name or 'Niciun fișier selectat' }}
+{% endblock %}
+
+{# card „Fișier” din dreapta #}
+{% block file_info %}
+  <p class="small mb-1 text-muted">
+    Fișier: {{ current_file_name or '–' }}
+  </p>
+  <p class="small mb-1 text-muted">
+    Număr rânduri: {{ n_rows if n_rows is not none else '–' }}
+  </p>
+  <p class="small mb-0 text-muted">
+    Număr coloane: {{ n_cols if n_cols is not none else '–' }}
+  </p>
+{% endblock %}
+
+{# ===================== GRAFICE (mijloc) ===================== #}
+{% block graphs %}
+
+  {% if plot_u_y_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-2">Semnalele de intrare și ieșire</h6>
+        <p class="small text-muted">
+          u[n] – semnal de test (intrare), y[n] – răspunsul sistemului.
+        </p>
+        <img src="{{ plot_u_y_url }}" class="img-fluid" alt="u și y">
+      </div>
+    </div>
+  {% endif %}
+
+  {% if plot_ru_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-2">Autocorelația intrării Ru(k)</h6>
+        <p class="small text-muted mb-1">
+          Ru(k) ≈ (1/N) · Σ u(i) · u(i + k)
+        </p>
+        <img src="{{ plot_ru_url }}" class="img-fluid" alt="Ru(k)">
+      </div>
+    </div>
+  {% endif %}
+
+  {% if plot_ruy_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-2">Intercorelația intrare–ieșire Ruy(k)</h6>
+        <p class="small text-muted mb-1">
+          Ruy(k) ≈ (1/N) · Σ u(i) · y(i + k)
+        </p>
+        <img src="{{ plot_ruy_url }}" class="img-fluid" alt="Ruy(k)">
+      </div>
+    </div>
+  {% endif %}
+
+  {% if plot_h_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-2">Funcția pondere estimată h(k)</h6>
+        <p class="small text-muted mb-1">
+          h(k) – secvența de ponderare a sistemului, obținută din ecuația Wiener–Hopf.
+        </p>
+        <img src="{{ plot_h_url }}" class="img-fluid" alt="h(k)">
+      </div>
+    </div>
+  {% endif %}
+
+  {% if not plot_u_y_url and not plot_h_url %}
+    <div class="card">
+      <div class="card-body">
+        <p class="small text-muted mb-0">
+          Încarcă un fișier .csv și selectează L4 în panoul din stânga, apoi apasă <strong>Start analysis</strong>.
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+{% endblock %}
+
+{# ===================== DREAPTA – INFO / FORMULE ===================== #}
+
+{# Card parametri experiment #}
+{% block statsX %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <h6 class="card-title mb-3">Parametri experiment L4</h6>
+
+      <div class="mb-2">
+        <div class="small text-muted">Număr eșantioane N</div>
+        <div class="font-weight-bold">
+          {{ N if N is not none else '–' }}
+        </div>
+      </div>
+
+      <div>
+        <div class="small text-muted">Lungimea funcției pondere nh</div>
+        <div class="font-weight-bold">
+          {{ nh if nh is not none else '–' }}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{# nu umplem Statistici Y la L4 #}
+{% block statsY %}{% endblock %}
+
+{# Card: ecuația Wiener–Hopf în timp #}
+{% block stats1 %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <h6 class="card-title mb-2">Ecuația Wiener–Hopf (forma discretă)</h6>
+
+      <p class="small mb-2">
+        Metoda deconvoluţiei pornește de la legătura dintre
+        <strong>intercorelația</strong> intrare–ieșire și <strong>autocorelația</strong> intrării:
+      </p>
+
+      <div class="bg-light border rounded p-2 mb-3">
+        <p class="small mb-1">
+          R<sub>uy</sub>(kΔ) ≈ Σ h(iΔ) · R<sub>u</sub>((k − i)Δ)
+        </p>
+        <p class="small mb-0">
+          k = 0, 1, …, nh − 1
+        </p>
+      </div>
+
+      <p class="small mb-2">
+        În formă matricială, sistemul de ecuații se scrie:
+      </p>
+
+      <div class="bg-light border rounded p-2">
+        <p class="small mb-1">
+          Φ<sub>u</sub> · H = Φ<sub>uy</sub>
+        </p>
+        <p class="small mb-0">
+          H = [h(0), h(Δ), …, h((nh−1)Δ)]<sup>T</sup>
+        </p>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{# Card: cum calculăm Ru, Ruy și h(k) #}
+{% block stats2 %}
+  <div class="card">
+    <div class="card-body">
+      <h6 class="card-title mb-2">Relațiile de calcul pentru L4</h6>
+
+      <p class="small mb-2">
+        Pentru un semnal de intrare u[n] și ieșire y[n] (n = 0…N−1), se calculează:
+      </p>
+
+      <div class="bg-light border rounded p-2 mb-3">
+        <p class="small mb-1">
+          R<sub>u</sub>(k) ≈ (1/N) · Σ u(i) · u(i + k)
+        </p>
+        <p class="small mb-0">
+          R<sub>uy</sub>(k) ≈ (1/N) · Σ u(i) · y(i + k)
+        </p>
+        <p class="small mt-2 mb-0">
+          pentru k = 0, 1, …, nh − 1
+        </p>
+      </div>
+
+      <p class="small mb-2">
+        Matricea Φ<sub>u</sub> este o matrice Toeplitz construită din valorile
+        autocorelației Ru(k), iar Φ<sub>uy</sub> este vectorul cu valorile R<sub>uy</sub>(k):
+      </p>
+
+      <div class="bg-light border rounded p-2 mb-3">
+        <p class="small mb-1">
+          Φ<sub>u</sub>(i,j) = R<sub>u</sub>(|i − j|),
+          &nbsp; i,j = 0…nh−1
+        </p>
+        <p class="small mb-0">
+          Φ<sub>uy</sub>(i) = R<sub>uy</sub>(i), &nbsp; i = 0…nh−1
+        </p>
+      </div>
+
+      <p class="small mb-2">
+        Funcția pondere (secvența de ponderare) se obține rezolvând:
+      </p>
+
+      <div class="bg-light border rounded p-2">
+        <p class="small mb-0">
+          H = Φ<sub>u</sub><sup>−1</sup> · Φ<sub>uy</sub>
+        </p>
+      </div>
+    </div>
+  </div>
+{% endblock %}

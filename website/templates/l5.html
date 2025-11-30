@@ -1,0 +1,194 @@
+{% extends "mainbase.html" %}
+
+{% block title %}
+  L5 – CMMP offline (model ARX)
+{% endblock %}
+
+{% block title_graf %}
+  L5 – Identificarea parametrilor prin metoda CMMP offline
+{% endblock %}
+
+{# numele fișierului sub butonul de încărcare .csv #}
+{% block current_file_name %}
+  {{ current_file_name or 'Niciun fișier selectat' }}
+{% endblock %}
+
+{# card „Fișier” din dreapta #}
+{% block file_info %}
+  <p class="small mb-1 text-muted">
+    Fișier: {{ current_file_name or '–' }}
+  </p>
+  <p class="small mb-1 text-muted">
+    Număr rânduri: {{ n_rows if n_rows is not none else '–' }}
+  </p>
+  <p class="small mb-0 text-muted">
+    Număr coloane: {{ n_cols if n_cols is not none else '–' }}
+  </p>
+{% endblock %}
+
+{# ===================== GRAFICE (mijloc) ===================== #}
+{% block graphs %}
+
+  {% if plot_u_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-2">Semnal de intrare u[n]</h6>
+        <img src="{{ plot_u_url }}" class="img-fluid" alt="u[n]">
+      </div>
+    </div>
+  {% endif %}
+
+  {% if plot_y_hat_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-2">Ieșire măsurată vs ieșire estimată</h6>
+        <p class="small text-muted">
+          Curba roșie reprezintă ieșirea estimată ŷ[n] a modelului ARX
+          obținut prin metoda celor mai mici pătrate (CMMP offline).
+        </p>
+        <img src="{{ plot_y_hat_url }}" class="img-fluid" alt="y și ŷ">
+      </div>
+    </div>
+  {% endif %}
+
+  {% if not plot_u_url and not plot_y_hat_url %}
+    <div class="card">
+      <div class="card-body">
+        <p class="small text-muted mb-0">
+          Încarcă un fișier .csv, selectează metoda L5 (CMMP offline) și apasă
+          <strong>Start analysis</strong> pentru a vedea rezultatele.
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+{% endblock %}
+
+{# ===================== CARD: Parametri ARX (dreapta) ===================== #}
+{% block statsX %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <h6 class="card-title mb-3">Parametrii modelului ARX</h6>
+
+      <p class="small mb-2">
+        Model ales: ARX cu ordinele
+        <strong>na = {{ na }}</strong>, <strong>nb = {{ nb }}</strong>
+      </p>
+      <p class="small mb-3 bg-light border rounded p-2">
+        y[n] + a<sub>1</sub> y[n−1] + … + a<sub>na</sub> y[n−na] =
+        b<sub>1</sub> u[n−1] + … + b<sub>nb</sub> u[n−nb]
+      </p>
+
+      <div class="mb-2">
+        <div class="small text-muted mb-1">Coeficienți a<sub>i</sub> (autoregresivi)</div>
+        <div class="font-weight-bold">
+          {% if a_params is not none %}
+            {% for val in a_params %}
+              a{{ loop.index }} = {{ "%.4f"|format(val) }}<br>
+            {% endfor %}
+          {% else %}
+            –
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <div class="small text-muted mb-1">Coeficienți b<sub>j</sub> (pe intrare)</div>
+        <div class="font-weight-bold">
+          {% if b_params is not none %}
+            {% for val in b_params %}
+              b{{ loop.index }} = {{ "%.4f"|format(val) }}<br>
+            {% endfor %}
+          {% else %}
+            –
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <div class="small text-muted">Număr eșantioane folosite în regresie</div>
+        <div class="font-weight-bold">
+          {{ N_eff if N_eff is not none else '–' }}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{# nu folosim statsY separat în L5 #}
+{% block statsY %}{% endblock %}
+
+{# ===================== CARD: Matricea Φ și CMMP offline ===================== #}
+{% block stats1 %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <h6 class="card-title mb-2">Formularea CMMP offline</h6>
+
+      <p class="small mb-2">
+        Pentru fiecare eșantion n ≥ max(na, nb) se definește vectorul de regresori:
+      </p>
+
+      <div class="bg-light border rounded p-2 mb-2">
+        <p class="small mb-1">
+          φ<sup>T</sup>(n) =
+          [ −y[n−1], …, −y[n−na],
+            u[n−1], …, u[n−nb] ]
+        </p>
+        <p class="small mb-0">
+          Θ =
+          [ a<sub>1</sub>, …, a<sub>na</sub>,
+            b<sub>1</sub>, …, b<sub>nb</sub> ]<sup>T</sup>
+        </p>
+      </div>
+
+      <p class="small mb-2">
+        Se construiesc:
+      </p>
+
+      <div class="bg-light border rounded p-2 mb-2">
+        <p class="small mb-1">
+          Φ = [ φ<sup>T</sup>(n) ] – matricea de regresori (N<sub>eff</sub> × (na+nb))
+        </p>
+        <p class="small mb-0">
+          Y = [ y(n) ] – vectorul ieșirilor corespunzătoare
+        </p>
+      </div>
+
+      <p class="small mb-2">
+        Estimatorul celor mai mici pătrate (CMMP offline) este:
+      </p>
+
+      <div class="bg-light border rounded p-2">
+        <p class="small mb-0">
+          Θ̂ = (Φ<sup>T</sup> Φ)<sup>−1</sup> Φ<sup>T</sup> Y
+        </p>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{# ===================== CARD: Interpretare / ieșire estimată ===================== #}
+{% block stats2 %}
+  <div class="card">
+    <div class="card-body">
+      <h6 class="card-title mb-2">Interpretarea rezultatelor</h6>
+
+      <p class="small mb-2">
+        Odată estimați coeficienții a<sub>i</sub> și b<sub>j</sub>, modelul ARX poate
+        fi utilizat pentru simularea ieșirii sistemului:
+      </p>
+
+      <div class="bg-light border rounded p-2 mb-2">
+        <p class="small mb-0">
+          ŷ[n] = −a<sub>1</sub> y[n−1] − … − a<sub>na</sub> y[n−na]
+          + b<sub>1</sub> u[n−1] + … + b<sub>nb</sub> u[n−nb]
+        </p>
+      </div>
+
+      <p class="small mb-0">
+        Suprapunerea lui y[n] și ŷ[n] în grafic permite evaluarea calității
+        identificării (cât de bine urmărește modelul comportarea sistemului real).
+      </p>
+    </div>
+  </div>
+{% endblock %}
