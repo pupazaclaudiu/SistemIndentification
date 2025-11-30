@@ -1,0 +1,259 @@
+{% extends "mainbase.html" %}
+
+{% block title %}
+  L2 – Filtrarea numerică a datelor
+{% endblock %}
+
+{% block title_graf %}
+  L2 – Filtre numerice și analiză FFT
+{% endblock %}
+
+{# numele fișierului sub butonul de upload #}
+{% block current_file_name %}
+  {{ current_file_name or 'Niciun fișier selectat' }}
+{% endblock %}
+
+{# card „Fișier” din dreapta #}
+{% block file_info %}
+  <p class="small mb-1 text-muted">
+    Fișier: {{ current_file_name or '–' }}
+  </p>
+  <p class="small mb-1 text-muted">
+    Număr rânduri: {{ n_rows if n_rows is not none else '–' }}
+  </p>
+  <p class="small mb-0 text-muted">
+    Număr coloane: {{ n_cols if n_cols is not none else '–' }}
+  </p>
+{% endblock %}
+
+{# ===================== GRAFICE (mijloc) ===================== #}
+{% block graphs %}
+
+  {% if plot_x_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-2">Semnal original (din fișier)</h6>
+        <img src="{{ plot_x_url }}" class="img-fluid" alt="L2 x(t)">
+      </div>
+    </div>
+  {% endif %}
+
+  {% if plot_lp_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-2">Filtru trece-jos</h6>
+        <img src="{{ plot_lp_url }}" class="img-fluid" alt="Low-pass">
+      </div>
+    </div>
+  {% endif %}
+
+  {% if plot_hp_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-2">Filtru trece-sus</h6>
+        <img src="{{ plot_hp_url }}" class="img-fluid" alt="High-pass">
+      </div>
+    </div>
+  {% endif %}
+
+  {% if plot_cornell_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-2">Filtru Cornell (trece-sus)</h6>
+        <img src="{{ plot_cornell_url }}" class="img-fluid" alt="Cornell">
+      </div>
+    </div>
+  {% endif %}
+
+  {% if plot_fft1_url %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h6 class="mb-3">Analiză în frecvență (FFT cu prag α)</h6>
+
+        <div class="mb-3">
+          <strong class="small d-block mb-1">1) Semnal util</strong>
+          <img src="{{ plot_fft1_url }}" class="img-fluid" alt="FFT 1">
+        </div>
+
+        <div class="mb-3">
+          <strong class="small d-block mb-1">2) Perturbație și semnal perturbat</strong>
+          <img src="{{ plot_fft2_url }}" class="img-fluid" alt="FFT 2">
+        </div>
+
+        <div class="mb-3">
+          <strong class="small d-block mb-1">3) Spectru util vs perturbat</strong>
+          <img src="{{ plot_fft3_url }}" class="img-fluid" alt="FFT 3">
+        </div>
+
+        <div class="mb-3">
+          <strong class="small d-block mb-1">4) Spectru perturbat și prag α</strong>
+          <img src="{{ plot_fft4_url }}" class="img-fluid" alt="FFT 4">
+        </div>
+
+        <div class="mb-3">
+          <strong class="small d-block mb-1">5) Spectru semnal filtrat</strong>
+          <img src="{{ plot_fft5_url }}" class="img-fluid" alt="FFT 5">
+        </div>
+
+        <div>
+          <strong class="small d-block mb-1">6) Semnal util vs filtrat</strong>
+          <img src="{{ plot_fft6_url }}" class="img-fluid" alt="FFT 6">
+        </div>
+
+      </div>
+    </div>
+  {% endif %}
+
+{% endblock %}
+
+{% block statsX %}{% endblock %}
+{% block statsY %}{% endblock %}
+{% block stats1 %}{% endblock %}
+
+{# ===================== FORMULE ÎN 3 CARDURI ===================== #}
+{% block stats2 %}
+
+  {# ---------- CARD 1: FILTRU ORDIN I – FORMULĂ ---------- #}
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="card-title mb-2">Filtru de ordin I</h6>
+    <p class="small mb-2">
+      Forma generală a unui filtru de ordin I:
+    </p>
+
+    <div class="bg-light border rounded p-2">
+      <p class="small mb-1">
+        y(i) =
+        &sum;<sub>k=0</sub><sup>1</sup> b<sub>k</sub> · x(i − k)
+        − a<sub>1</sub> · y(i − 1)
+      </p>
+    </div>
+  </div>
+</div>
+
+{# ---------- CARD 2: FILTRU ORDIN I – TABEL LP / HP / CORNELL ---------- #}
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="card-title mb-2">Coeficienți pentru filtre de ordin I</h6>
+    <p class="small mb-2">
+      Tabelul coeficienților b<sub>0</sub>, b<sub>1</sub> și a<sub>1</sub>:
+    </p>
+
+    <div class="table-responsive">
+      <table class="table table-sm table-bordered mb-0">
+        <thead class="thead-light">
+          <tr>
+            <th>Tip filtru</th>
+            <th>b<sub>0</sub></th>
+            <th>b<sub>1</sub></th>
+            <th>a<sub>1</sub></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Filtru trece-jos</td>
+            <td>(1 − α)</td>
+            <td>0</td>
+            <td>−α</td>
+          </tr>
+          <tr>
+            <td>Filtru trece-sus</td>
+            <td>(1 − α)</td>
+            <td>0</td>
+            <td>α</td>
+          </tr>
+          <tr>
+            <td>Filtru Cornell (trece-sus)</td>
+            <td>(1 − α) / 2</td>
+            <td>−(1 − α) / 2</td>
+            <td>−(1 − α)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{# ---------- CARD 3: INTEGRATOR / DIFERENȚIATOR – FORMULĂ ---------- #}
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="card-title mb-2">
+      Filtre de ordin I – Integrator și Diferențiator
+    </h6>
+    <p class="small mb-2">
+      Forma generală rămâne aceeași ca pentru filtrul de ordin I:
+    </p>
+
+    <div class="bg-light border rounded p-2 mb-2">
+      <p class="small mb-1">
+        y(i) =
+        b<sub>0</sub>x(i) + b<sub>1</sub>x(i − 1)
+        − a<sub>1</sub>y(i − 1)
+      </p>
+    </div>
+
+    <p class="small mb-0">
+      Coeficienții diferă în funcție de tipul filtrului (integrator sau diferențiator).
+    </p>
+  </div>
+</div>
+
+{# ---------- CARD 4: INTEGRATOR / DIFERENȚIATOR – TABEL ---------- #}
+<div class="card mb-3">
+  <div class="card-body">
+    <h6 class="card-title mb-2">Coeficienți – Integrator și Diferențiator</h6>
+    <p class="small mb-2">
+      Valorile coeficienților pentru filtrele integrator și diferențiator:
+    </p>
+
+    <div class="table-responsive">
+      <table class="table table-sm table-bordered mb-0">
+        <thead class="thead-light">
+          <tr>
+            <th>Tip filtru</th>
+            <th>b<sub>0</sub></th>
+            <th>b<sub>1</sub></th>
+            <th>a<sub>1</sub></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Integrator</td>
+            <td>T</td>
+            <td>0</td>
+            <td>−1</td>
+          </tr>
+          <tr>
+            <td>Diferențiator</td>
+            <td>1 / T</td>
+            <td>−1 / T</td>
+            <td>0</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+  {# Card 3: Filtru de ordin II #}
+  <div class="card">
+    <div class="card-body">
+      <h6 class="card-title mb-2">Filtru de ordin II</h6>
+      <p class="small mb-2">
+        Forma generală a unui filtru de ordin II:
+      </p>
+      <p class="small mb-2">
+        y(i) =
+        &sum;<sub>k=0</sub><sup>2</sup> b<sub>k</sub> · x(i − k)
+        − &sum;<sub>j=1</sub><sup>2</sup> a<sub>j</sub> · y(i − j)
+      </p>
+      <p class="small mb-0">
+        adică:<br>
+        y(i) = b<sub>0</sub>x(i) + b<sub>1</sub>x(i − 1) + b<sub>2</sub>x(i − 2)
+        − a<sub>1</sub>y(i − 1) − a<sub>2</sub>y(i − 2)
+      </p>
+    </div>
+  </div>
+
+{% endblock %}

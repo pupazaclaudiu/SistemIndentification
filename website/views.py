@@ -2,8 +2,11 @@ import os
 import numpy as np
 import pandas as pd
 from flask import Blueprint, render_template, request, flash, current_app,redirect, url_for
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from werkzeug.utils import secure_filename
+from scipy.signal import lfilter
 
 views = Blueprint('views', __name__)
 
@@ -143,7 +146,7 @@ def l1():
         corr_max_ryy = float(ryy.max())
 
         # === GENERARE PLOT-URI ===
-        plots_dir = os.path.join(current_app.static_folder, 'plots')
+        plots_dir = os.path.join(current_app.static_folder, 'plots/l1')
         os.makedirs(plots_dir, exist_ok=True)
 
         # X(t)
@@ -183,10 +186,10 @@ def l1():
         plt.close()
 
         # URL-urile către imagini (pentru <img src="..."> în template)
-        plot_x_url = url_for('static', filename='plots/l1_x.png')
-        plot_y_url = url_for('static', filename='plots/l1_y.png')
-        plot_rxx_url = url_for('static', filename='plots/l1_rxx.png')
-        plot_rxy_url = url_for('static', filename='plots/l1_rxy.png')
+        plot_x_url = url_for('static', filename='plots/l1/l1_x.png')
+        plot_y_url = url_for('static', filename='plots/l1/l1_y.png')
+        plot_rxx_url = url_for('static', filename='plots/l1/l1_rxx.png')
+        plot_rxy_url = url_for('static', filename='plots/l1/l1_rxy.png')
 
     return render_template(
         'l1.html',
@@ -219,3 +222,225 @@ def l1():
         plot_rxx_url=plot_rxx_url,
         plot_rxy_url=plot_rxy_url,
     )
+@views.route('/l2')
+def l2():
+    current_file_name = None
+    n_rows = None
+    n_cols = None
+
+    plot_x_url = None
+    plot_lp_url = None
+    plot_hp_url = None
+    plot_cornell_url = None
+
+    # 6 imagini FFT separate
+    plot_fft1_url = plot_fft2_url = None
+    plot_fft3_url = plot_fft4_url = None
+    plot_fft5_url = plot_fft6_url = None
+
+    filename = request.args.get('filename')
+
+    if filename:
+        current_file_name = filename
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+
+        # citire CSV cu separator auto-detectat (',' sau ';')
+        df = pd.read_csv(filepath, sep=None, engine="python")
+        n_rows, n_cols = df.shape
+
+        if n_cols < 1:
+            flash('Fișierul trebuie să aibă cel puțin o coloană pentru L2.', 'error')
+        else:
+            # X = prima coloană
+            x = df.iloc[:, 0].to_numpy()
+
+            # ==========================
+            # Filtre ordin I (LP, HP, Cornell)
+            # ==========================
+            T = 0.01
+            alpha = 0.7
+            t = np.arange(len(x)) * T
+
+            # trece-jos
+            b_lp = [1 - alpha, 0]
+            a_lp = [1, -alpha]
+
+            # trece-sus
+            b_hp = [1 - alpha, 0]
+            a_hp = [1, alpha]
+
+            # Cornell (trece-sus îmbunătățit)
+            b_cornell = [(1 - alpha) / 2, -(1 - alpha) / 2]
+            a_cornell = [1, -(1 - alpha)]
+
+            y_lp = lfilter(b_lp, a_lp, x)
+            y_hp = lfilter(b_hp, a_hp, x)
+            y_cornell = lfilter(b_cornell, a_cornell, x)
+
+            # ==========================
+            # Analiză FFT (semnal sintetic, cum era în exemplu)
+            # ==========================
+            N = 128
+            i = np.arange(1, N + 1)
+            q = np.sin(i * 14 * np.pi / 128) + np.cos(i * 19 * np.pi / 128)
+
+            p = 2 * np.random.rand(N) - 1
+            s = q + p
+
+            fq = np.fft.fft(q)
+            fs = np.fft.fft(s)
+
+            alfa = 16
+            g = np.zeros_like(fs, dtype=complex)
+            for k in range(N):
+                if np.abs(fs[k]) > alfa:
+                    g[k] = fs[k]
+
+            h = np.fft.ifft(g)
+            H = np.fft.fft(h)
+
+            # ==========================
+            # Salvare plot-uri
+            # ==========================
+            plots_dir = os.path.join(current_app.static_folder, 'plots/l2')
+            os.makedirs(plots_dir, exist_ok=True)
+
+            # --- semnal original (din fișier) ---
+            plt.figure()
+            plt.plot(t, x)
+            plt.title('L2 – Semnal original (din fișier)')
+            plt.xlabel('t')
+            plt.ylabel('x[t]')
+            x_path = os.path.join(plots_dir, 'l2_x.png')
+            plt.savefig(x_path, bbox_inches='tight')
+            plt.close()
+
+            # --- LP ---
+            plt.figure()
+            plt.plot(t, y_lp)
+            plt.title('Filtru trece-jos')
+            plt.xlabel('t')
+            plt.ylabel('y_{LP}[t]')
+            lp_path = os.path.join(plots_dir, 'l2_lp.png')
+            plt.savefig(lp_path, bbox_inches='tight')
+            plt.close()
+
+            # --- HP ---
+            plt.figure()
+            plt.plot(t, y_hp)
+            plt.title('Filtru trece-sus')
+            plt.xlabel('t')
+            plt.ylabel('y_{HP}[t]')
+            hp_path = os.path.join(plots_dir, 'l2_hp.png')
+            plt.savefig(hp_path, bbox_inches='tight')
+            plt.close()
+
+            # --- Cornell ---
+            plt.figure()
+            plt.plot(t, y_cornell)
+            plt.title('Filtru Cornell (trece-sus)')
+            plt.xlabel('t')
+            plt.ylabel('y_{Cornell}[t]')
+            cornell_path = os.path.join(plots_dir, 'l2_cornell.png')
+            plt.savefig(cornell_path, bbox_inches='tight')
+            plt.close()
+
+            # ==========================
+            # 6 FIGURI FFT INDIVIDUALE
+            # ==========================
+
+            # 1) Semnal util
+            plt.figure(figsize=(8, 3))
+            plt.plot(i, q, 'b')
+            plt.title('1) Semnal util')
+            plt.grid(True)
+            fft1_path = os.path.join(plots_dir, 'l2_fft1.png')
+            plt.savefig(fft1_path, bbox_inches='tight')
+            plt.close()
+
+            # 2) Perturbație + semnal perturbat
+            plt.figure(figsize=(8, 3))
+            plt.plot(i, p, 'r', label='Perturbație')
+            plt.plot(i, s, 'k', label='Semnal perturbat', linewidth=0.8)
+            plt.title('2) Perturbație și semnal perturbat')
+            plt.legend()
+            plt.grid(True)
+            fft2_path = os.path.join(plots_dir, 'l2_fft2.png')
+            plt.savefig(fft2_path, bbox_inches='tight')
+            plt.close()
+
+            # 3) Spectru util vs perturbat
+            plt.figure(figsize=(8, 3))
+            plt.plot(np.abs(fq), 'b', label='|FFT(q)| – util')
+            plt.plot(np.abs(fs), 'r', label='|FFT(s)| – perturbat', alpha=0.7)
+            plt.title('3) Spectru util vs perturbat')
+            plt.legend()
+            plt.grid(True)
+            fft3_path = os.path.join(plots_dir, 'l2_fft3.png')
+            plt.savefig(fft3_path, bbox_inches='tight')
+            plt.close()
+
+            # 4) Spectru perturbat + prag α
+            plt.figure(figsize=(8, 3))
+            plt.plot(np.abs(fs), label='|FFT(s)| – perturbat')
+            plt.plot([alfa] * N, 'r--', label=f'Prag α={alfa}')
+            plt.title('4) Spectru perturbat și prag α')
+            plt.legend()
+            plt.grid(True)
+            fft4_path = os.path.join(plots_dir, 'l2_fft4.png')
+            plt.savefig(fft4_path, bbox_inches='tight')
+            plt.close()
+
+            # 5) Spectru semnal filtrat
+            plt.figure(figsize=(8, 3))
+            plt.plot(np.abs(H), 'g')
+            plt.title('5) Spectru semnal filtrat')
+            plt.grid(True)
+            fft5_path = os.path.join(plots_dir, 'l2_fft5.png')
+            plt.savefig(fft5_path, bbox_inches='tight')
+            plt.close()
+
+            # 6) Semnal util vs filtrat
+            plt.figure(figsize=(8, 3))
+            plt.plot(np.real(h), 'k', label='Semnal filtrat')
+            plt.plot(q, ':g', label='Semnal util (referință)')
+            plt.title('6) Semnal util vs filtrat')
+            plt.legend()
+            plt.grid(True)
+            fft6_path = os.path.join(plots_dir, 'l2_fft6.png')
+            plt.savefig(fft6_path, bbox_inches='tight')
+            plt.close()
+
+            # URL-uri către imagini
+            plot_x_url = url_for('static', filename='plots/l2/l2_x.png')
+            plot_lp_url = url_for('static', filename='plots/l2/l2_lp.png')
+            plot_hp_url = url_for('static', filename='plots/l2/l2_hp.png')
+            plot_cornell_url = url_for('static', filename='plots/l2/l2_cornell.png')
+
+            plot_fft1_url = url_for('static', filename='plots/l2/l2_fft1.png')
+            plot_fft2_url = url_for('static', filename='plots/l2/l2_fft2.png')
+            plot_fft3_url = url_for('static', filename='plots/l2/l2_fft3.png')
+            plot_fft4_url = url_for('static', filename='plots/l2/l2_fft4.png')
+            plot_fft5_url = url_for('static', filename='plots/l2/l2_fft5.png')
+            plot_fft6_url = url_for('static', filename='plots/l2/l2_fft6.png')
+
+    return render_template(
+        'l2.html',
+        methods=METHODS,
+        active_method=2,
+        current_file_name=current_file_name,
+        n_rows=n_rows,
+        n_cols=n_cols,
+        plot_x_url=plot_x_url,
+        plot_lp_url=plot_lp_url,
+        plot_hp_url=plot_hp_url,
+        plot_cornell_url=plot_cornell_url,
+        plot_fft1_url=plot_fft1_url,
+        plot_fft2_url=plot_fft2_url,
+        plot_fft3_url=plot_fft3_url,
+        plot_fft4_url=plot_fft4_url,
+        plot_fft5_url=plot_fft5_url,
+        plot_fft6_url=plot_fft6_url,
+    )
+
+
