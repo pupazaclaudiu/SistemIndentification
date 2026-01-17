@@ -1,6 +1,114 @@
 {% extends "base.html" %}
-{% block title %}HomeBase{% endblock %}
+{% block title %}Home - System Identification{% endblock %}
 
 {% block content %}
-<h1>This is the home page</h1>
+<div class="hero-section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 80px 20px; border-radius: 15px; margin-bottom: 40px; text-align: center;">
+    <h1 style="font-size: 3rem; font-weight: bold; margin-bottom: 20px;">System Identification Platform</h1>
+    <p style="font-size: 1.3rem; margin-bottom: 0; opacity: 0.95;">Explorează și aplică metode avansate de identificare a sistemelor</p>
+</div>
+
+<div class="container">
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h2 style="font-size: 2.5rem; margin-bottom: 15px; color: #333;">Despre Platformă</h2>
+            <p style="font-size: 1.1rem; color: #666; max-width: 800px; margin: 0 auto;">
+                Această platformă oferă instrumente pentru identificarea sistemelor dinamice folosind diverse metode
+                teoretice și practice studiate în cadrul laboratorului de Identificarea Sistemelor.
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100" style="border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.3s;">
+                <div class="card-body text-center">
+                    <div style="font-size: 3rem; color: #667eea; margin-bottom: 20px;">📊</div>
+                    <h3 class="card-title" style="color: #333; font-size: 1.5rem;">Analiza Datelor</h3>
+                    <p class="card-text" style="color: #666;">
+                        Încarcă și procesează seturi de date pentru identificarea parametrilor sistemelor.
+                        Suportă formate multiple de fișiere.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card h-100" style="border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.3s;">
+                <div class="card-body text-center">
+                    <div style="font-size: 3rem; color: #764ba2; margin-bottom: 20px;">🔬</div>
+                    <h3 class="card-title" style="color: #333; font-size: 1.5rem;">Metode de Identificare</h3>
+                    <p class="card-text" style="color: #666;">
+                        Aplică metode precum Least Squares, ARX, ARMAX, și alte tehnici avansate
+                        de identificare a sistemelor.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card h-100" style="border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.3s;">
+                <div class="card-body text-center">
+                    <div style="font-size: 3rem; color: #667eea; margin-bottom: 20px;">📈</div>
+                    <h3 class="card-title" style="color: #333; font-size: 1.5rem;">Vizualizare Rezultate</h3>
+                    <p class="card-text" style="color: #666;">
+                        Generează grafice și rapoarte detaliate pentru a înțelege comportamentul
+                        sistemului identificat.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <div style="background: #f8f9fa; padding: 40px; border-radius: 15px; border-left: 5px solid #667eea;">
+                <h3 style="color: #333; margin-bottom: 20px;">🎓 Metode Implementate</h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul style="font-size: 1.05rem; color: #555; line-height: 2;">
+                            <li>Totul despre semnale/procese stochastice</li>
+                            <li>Filtrarea numerica a datelor</li>
+                            <li>Identificarea sistemelor utilizand metode de regresie</li>
+                            <li>Identificare sistemelor prin metoda deconvolutiei</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul style="font-size: 1.05rem; color: #555; line-height: 2;">
+                            <li>Metoda celor mai mici patrate (CMMP) off-line</li>
+                            <li>Estimatori CMMP on-line</li>
+                            <li>Curve fitting</li>
+                            <li>Neural Network</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if user.is_authenticated %}
+    <div class="row mt-5 mb-5">
+        <div class="col-12 text-center">
+            <h3 style="color: #333; margin-bottom: 20px;">Bine ai revenit, {{ user.username }}! 👋</h3>
+            <p style="font-size: 1.1rem; color: #666; margin-bottom: 30px;">Gata să începi o nouă analiză?</p>
+            <a href="/upload" class="btn btn-primary btn-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 12px 40px;">Începe Acum</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.2) !important;
+    }
+
+    .hero-section {
+        animation: fadeIn 1s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
 {% endblock %}
