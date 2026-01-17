@@ -2,6 +2,7 @@ from flask import Flask
 from dotenv import load_dotenv
 import os
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager,current_user
 
 load_dotenv()
 db=SQLAlchemy()
@@ -12,6 +13,11 @@ def create_app():
     app.config['SECRET_KEY']=os.getenv('SECRET_KEY')
     app.config['SQLALCHEMY_DATABASE_URI']=f"sqlite:///{DB_NAME}"
     db.init_app(app)
+    @app.context_processor
+    def inject_user():
+        return dict(user=current_user)
+
+
 
     from .views import views
     from .auth import auth1
@@ -22,6 +28,14 @@ def create_app():
     from .models import User, Note
 
     create_database(app)
+
+    login_manager = LoginManager()
+    login_manager.login_view = 'auth.login'
+    login_manager.init_app(app)
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
 
     return app
 

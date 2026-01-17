@@ -9,8 +9,7 @@ from werkzeug.utils import secure_filename
 from scipy.signal import lfilter
 from sklearn.neural_network import MLPRegressor
 from sklearn.metrics import mean_squared_error, r2_score
-
-
+from flask_login import login_required, current_user
 views = Blueprint('views', __name__)
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), '..', 'uploads')
@@ -27,11 +26,13 @@ METHODS=[
     {"id":8,"name":"Neural Network","endpoint":"l8"}
 ]
 
+
 @views.route('/')
 def home():
-    return render_template('home.html')
+    return render_template('home.html',user=current_user)
 
 @views.route('/upload', methods=['GET', 'POST'])
+@login_required
 def upload():
     active_method = None
     current_file_name = None
@@ -81,10 +82,12 @@ def upload():
         methods=METHODS,
         active_method=active_method,
         current_file_name=current_file_name,
+        user=current_user,
     )
 
 
 @views.route('/l1', methods=['GET'])
+@login_required
 def l1():
     current_file_name = None
     n_rows = None
@@ -225,7 +228,9 @@ def l1():
         plot_rxx_url=plot_rxx_url,
         plot_rxy_url=plot_rxy_url,
     )
+
 @views.route('/l2')
+@login_required
 def l2():
     current_file_name = None
     n_rows = None
@@ -446,7 +451,9 @@ def l2():
         plot_fft5_url=plot_fft5_url,
         plot_fft6_url=plot_fft6_url,
     )
+
 @views.route('/l3')
+@login_required
 def l3():
     current_file_name = None
     n_rows = None
@@ -525,7 +532,9 @@ def l3():
 
         reg_plot_url=reg_plot_url,
     )
+
 @views.route('/l4')
+@login_required
 def l4():
     current_file_name = None
     n_rows = None
@@ -679,7 +688,9 @@ def l4():
         plot_ruy_url=plot_ruy_url,
         plot_h_url=plot_h_url,
     )
+
 @views.route('/l5')
+@login_required
 def l5():
     current_file_name = None
     n_rows = None
@@ -809,6 +820,7 @@ def l5():
         plot_y_hat_url=plot_y_hat_url,
     )
 @views.route('/l6')
+@login_required
 def l6():
     current_file_name = None
     n_rows = None
@@ -961,6 +973,7 @@ def l6():
         y_compare_plot_url=y_compare_plot_url,
     )
 @views.route('/l7')
+@login_required
 def l7():
     current_file_name = None
     n_rows = None
@@ -1128,6 +1141,7 @@ def l7():
         rmse_plot_url=rmse_plot_url,
     )
 @views.route('/l8')
+@login_required
 def l8():
     current_file_name = None
     n_rows = None
